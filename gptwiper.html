@@ -56,11 +56,31 @@
             border: 1px solid #ccc;
             box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
         }
+
+        #dropzone {
+          width: 300px;
+          height: 100px;
+          display: flex;
+          justify-content: center;
+          align-items: center;
+          border: 2px dashed #ccc;
+          border-radius: 3px;
+          margin-bottom: 20px;
+          color: #ccc;
+        }
+
+        #dropzone.dragover {
+          border-color: #4CAF50;
+          color: #4CAF50;
+        }
+
     </style>
 </head>
 <body>
     <h1>Image Wipe Animation</h1>
     <div id="controls">
+        <div id="dropzone">Drop an image here</div>
+
         <input type="file" id="imageUpload" accept="image/*">
         <select id="animationSelect">
             <option value="horizontalWipe">Horizontal Wipe</option>
@@ -76,38 +96,69 @@
 const animationSelect = document.getElementById('animationSelect');
 const imageCanvas = document.getElementById('imageCanvas');
 const ctx = imageCanvas.getContext('2d');
+const dropzone = document.getElementById('dropzone');
 
 let img = new Image();
 
-imageUpload.addEventListener('change', (event) => {
-    const file = event.target.files[0];
-    const reader = new FileReader();
-
-    reader.onload = (e) => {
-        img.src = e.target.result;
-        img.onload = () => {
-    const windowWidth = window.innerWidth;
-    const windowHeight = window.innerHeight;
-    const imgAspectRatio = img.width / img.height;
-    
-    let newWidth, newHeight;
-    if (windowWidth / imgAspectRatio <= windowHeight) {
-        newWidth = windowWidth * 0.9;
-        newHeight = newWidth / imgAspectRatio;
-    } else {
-        newHeight = windowHeight * 0.9;
-        newWidth = newHeight * imgAspectRatio;
-    }
-
-    imageCanvas.width = newWidth;
-    imageCanvas.height = newHeight;
-    ctx.drawImage(img, 0, 0, newWidth, newHeight);
-};
-
-    };
-
-    reader.readAsDataURL(file);
+imageUpload.addEventListener('change', (e) => {
+  if (e.target.files.length > 0) {
+    handleImageUpload(e.target.files[0]);
+  }
 });
+
+dropzone.addEventListener('dragover', (e) => {
+  e.preventDefault();
+  e.stopPropagation();
+  dropzone.classList.add('dragover');
+});
+
+dropzone.addEventListener('dragleave', () => {
+  dropzone.classList.remove('dragover');
+});
+
+dropzone.addEventListener('drop', (e) => {
+  e.preventDefault();
+  e.stopPropagation();
+  dropzone.classList.remove('dragover');
+  const files = e.dataTransfer.files;
+  if (files.length > 0) {
+    handleImageUpload(files[0]);
+  }
+});
+
+function handleImageUpload(file) {
+  if (!file.type.startsWith('image/')) {
+    alert('Please upload an image file.');
+    return;
+  }
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    const img = new Image();
+    img.src = e.target.result;
+    img.onload = () => {
+      const aspectRatio = img.width / img.height;
+      const maxWidth = window.innerWidth * 0.9;
+      const maxHeight = window.innerHeight * 0.9;
+
+      if (img.width > maxWidth) {
+        img.width = maxWidth;
+        img.height = maxWidth / aspectRatio;
+      }
+
+      if (img.height > maxHeight) {
+        img.height = maxHeight;
+        img.width = maxHeight * aspectRatio;
+      }
+
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      canvas.width = img.width;
+      canvas.height = img.height;
+      ctx.drawImage(img, 0, 0, img.width, img.height);
+    };
+  };
+  reader.readAsDataURL(file);
+}
+
 
 function startAnimation() {
     const animation = animationSelect.value;
