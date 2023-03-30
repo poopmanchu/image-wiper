@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Image Wipe Animation</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f5f5f5;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+        }
+
+        h1 {
+            color: #333;
+            font-size: 2rem;
+            margin-bottom: 20px;
+        }
+
+        #controls {
+            display: flex;
+            gap: 20px;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        #controls input,
+        #controls select,
+        #controls button {
+            font-size: 1rem;
+            padding: 5px;
+            border: 1px solid #ccc;
+            border-radius: 3px;
+            background-color: #fff;
+            color: #333;
+        }
+
+        #controls button {
+            background-color: #4CAF50;
+            border-color: #4CAF50;
+            color: #fff;
+            cursor: pointer;
+        }
+
+        #controls button:hover {
+            background-color: #45a049;
+            border-color: #45a049;
+        }
+
+        canvas {
+            border: 1px solid #ccc;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+    </style>
+</head>
+<body>
+    <h1>Image Wipe Animation</h1>
+    <div id="controls">
+        <input type="file" id="imageUpload" accept="image/*">
+        <select id="animationSelect">
+            <option value="horizontalWipe">Horizontal Wipe</option>
+            <option value="verticalWipe">Vertical Wipe</option>
+            <option value="radialWipe">Radial Wipe</option>
+            <option value="tileWipe">Tile Wipe</option>
+        </select>
+        <button onclick="startAnimation()">Start Animation</button>
+    </div>
+    <canvas id="imageCanvas"></canvas>
+    <script>
+                const imageUpload = document.getElementById('imageUpload');
+const animationSelect = document.getElementById('animationSelect');
+const imageCanvas = document.getElementById('imageCanvas');
+const ctx = imageCanvas.getContext('2d');
+
+let img = new Image();
+
+imageUpload.addEventListener('change', (event) => {
+    const file = event.target.files[0];
+    const reader = new FileReader();
+
+    reader.onload = (e) => {
+        img.src = e.target.result;
+        img.onload = () => {
+    const windowWidth = window.innerWidth;
+    const windowHeight = window.innerHeight;
+    const imgAspectRatio = img.width / img.height;
+    
+    let newWidth, newHeight;
+    if (windowWidth / imgAspectRatio <= windowHeight) {
+        newWidth = windowWidth * 0.9;
+        newHeight = newWidth / imgAspectRatio;
+    } else {
+        newHeight = windowHeight * 0.9;
+        newWidth = newHeight * imgAspectRatio;
+    }
+
+    imageCanvas.width = newWidth;
+    imageCanvas.height = newHeight;
+    ctx.drawImage(img, 0, 0, newWidth, newHeight);
+};
+
+    };
+
+    reader.readAsDataURL(file);
+});
+
+function startAnimation() {
+    const animation = animationSelect.value;
+    switch (animation) {
+        case 'horizontalWipe':
+            horizontalWipe();
+            break;
+        case 'verticalWipe':
+            verticalWipe();
+            break;
+        case 'radialWipe':
+            radialWipe();
+            break;
+        case 'tileWipe':
+            tileWipe();
+        break;
+
+    }
+}
+
+function horizontalWipe() {
+    const wipeSpeed = 5;
+    let xPos = 0;
+
+    function animate() {
+        ctx.clearRect(xPos, 0, wipeSpeed, imageCanvas.height);
+        xPos += wipeSpeed;
+
+        if (xPos <= imageCanvas.width) {
+            requestAnimationFrame(animate);
+        }
+    }
+
+    animate();
+}
+
+function verticalWipe() {
+    const wipeSpeed = 5;
+    let yPos = 0;
+
+    function animate() {
+        ctx.clearRect(0, yPos, imageCanvas.width, wipeSpeed);
+        yPos += wipeSpeed;
+
+        if (yPos <= imageCanvas.height) {
+            requestAnimationFrame(animate);
+        }
+    }
+
+    animate();
+}
+
+function radialWipe() {
+    const wipeSpeed = 5;
+    let radius = 0;
+    const centerX = imageCanvas.width / 2;
+    const centerY = imageCanvas.height / 2;
+    const maxRadius = Math.hypot(centerX, centerY);
+
+    function animate() {
+        ctx.globalCompositeOperation = 'destination-out';
+        ctx.fillStyle = 'rgba(0, 0, 0, 1)';
+        ctx.beginPath();
+        ctx.arc(centerX, centerY, radius, 0, 2 * Math.PI);
+        ctx.fill();
+        ctx.globalCompositeOperation = 'source-over';
+        radius += wipeSpeed;
+
+        if (radius <= maxRadius) {
+            requestAnimationFrame(animate);
+        }
+    }
+
+    animate();
+}
+
+function tileWipe() {
+    const tileWidth = 50;
+    const tileHeight = 50;
+    const rows = Math.ceil(imageCanvas.height / tileHeight);
+    const cols = Math.ceil(imageCanvas.width / tileWidth);
+    const wipeSpeed = 150;
+    let completedTiles = 0;
+
+    function animateTile(row, col) {
+        ctx.clearRect(col * tileWidth, row * tileHeight, tileWidth, tileHeight);
+        completedTiles++;
+
+        if (completedTiles < rows * cols) {
+            setTimeout(() => {
+                const newRow = Math.floor(Math.random() * rows);
+                const newCol = Math.floor(Math.random() * cols);
+                animateTile(newRow, newCol);
+            }, wipeSpeed);
+        }
+    }
+
+    animateTile(0, 0);
+}
+
+    </script>
+</body>
+</html>
